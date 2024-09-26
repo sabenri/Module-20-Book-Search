@@ -1,8 +1,6 @@
-const { authenticationError } = require('@apollo/server/errors');
-const { User, Book } = require('../models');
-const jwt = require('jsonwebtoken');
-const { Query } = require('mongoose');
-const { login } = require('../controllers/user-controller');
+import { AuthenticationError } from '@apollo/server/errors';
+import { User, Book } from '../models';
+import jwt from 'jsonwebtoken';
 
 const secret = process.env.JWT_SECRET || 'mysecret';
 
@@ -11,50 +9,62 @@ const resolvers = {
         books: async () => {
             return Book.find({});
         },
-        book: async (parent, { id }) => {
+        book: async (_parent, { id }) => {
             return Book.findById(id);
         },
 
-        me: async (parent, args, {user}) => {
+        me: async (_parent, args, { user }) => {
             if (!user) {
-                throw new authenticationError('Please Log In');
+                throw new AuthenticationError('Please log in.');
             }
-            return User.findById(user._id).populate('saveBooks');
+            return User.findById(user._id).populate('savedBooks');
         },
     },
 
     Mutation: {
-        addUser: async (parent, {username, email, password}) => {
-            const user = await User.create({ username, email, password});
-            const token = jwt.sign({_id: user_id, email: user.email}, secret, { expiresIn: '2h'});
+        addUser: async (_parent, { username, email, password }) => {
+            const user = await User.create({ username, email, password });
+            const token = jwt.sign({ _id: user._id, email: user.email }, secret, { expiresIn: '2h' });
             return { token, user };
         },
         
-        login: async (parent, { email, password}) => {
-            const user = await User.findOne ({ email });
+        login: async (_parent, { email, password }) => {
+            const user = await User.findOne({ email });
 
             if (!user) {
-                throw new authenticationError('Sorry, The User Was Not Found.');
+                throw new AuthenticationError('User not found.');
             }
 
             const correctPw = await user.isCorrectPassword(password);
 
             if (!correctPw) {
-                throw new authenticationError('Sorry, This Password Is Invalid.');
+                throw new AuthenticationError('Invalid password.');
             }
-            const token =jwt.sign({_id: user._id, email: user.email}, secret, { expiresIn: '2h'});
+
+            const token = jwt.sign({ _id: user._id, email: user.email }, secret, { expiresIn: '2h' });
             return { token, user };
         },
 
-        saveBook: asyn (parnet, { bookData }, { user }) => {
-            if(!user) {
-                throw new authenticationError('Please Log In To Remove Books');
+        saveBook: async (_parent, { bookData }, { user }) => {
+            if (!user) {
+                throw new AuthenticationError('You must be logged in to save books.');
             }
 
             return User.findByIdAndUpdate(
                 user._id,
-                { $pull: { saveBook: { bookId}}},
-                {new: true}
+                { $addToSet: { savedBooks: bookData } },
+                { new: true, runValidators: true }
+            ).populate('savedBooks');
+        },
+
+        removeBook: async (_parent, { bookId }, { user }) => {
+            if (!user) {
+                throw new AuthenticationError('You must be logged in to remove books.');
+            }
+
+            return User.findByIdAndUpdate(
+                user._id,
+                { $pull: { savedBooks: { bookId } } },
             ).populate('savedBooks');
         },
     },
