@@ -3,37 +3,33 @@ import { gql } from 'graphql-tag';
 const typeDefs = gql`
     type Book {
         _id: ID
-        title: String 
-        author: String 
+        title: String
+        author: String
         description: String
         image: String
-        link: String 
+        link: String
     }
-    type User{
+
+    type User {
         _id: ID
-        username: String 
-        email: String 
-        saveBooks: [Book]
+        username: String
+        email: String
+        savedBooks: [Book]
     }
-    
-    type AuthPayload {
-        token: String 
-        user: User
-    }
-    
+
     type Query {
-        books:[Book]
-        book(id: ID!): Book 
+        books: [Book]
+        book(id: ID!): Book
         me: User
     }
 
     type Mutation {
-        addUser(username: String!, email: String!, password: String!): AuthPayload
-        login(email: String!, password: String!): AuthPayload
+        addUser(username: String!, email: String!, password: String!): User
+        login(email: String!, password: String!): String
         saveBook(bookId: ID!): User
         removeBook(bookId: ID!): User
     }
 `;
 
-module.exports = typeDefs;
+export { typeDefs };
 

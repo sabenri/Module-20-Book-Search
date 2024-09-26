@@ -1,5 +1,5 @@
-import { AuthenticationError } from '@apollo/server/errors';
-import { User, Book } from '../models';
+import { ApolloError } from '@apollo/server';
+import { User, Book } from '../models/index.js';
 import jwt from 'jsonwebtoken';
 
 const secret = process.env.JWT_SECRET || 'mysecret';
@@ -15,7 +15,7 @@ const resolvers = {
 
         me: async (_parent, args, { user }) => {
             if (!user) {
-                throw new AuthenticationError('Please log in.');
+                throw new ApolloError('Please log in.');
             }
             return User.findById(user._id).populate('savedBooks');
         },
@@ -32,13 +32,13 @@ const resolvers = {
             const user = await User.findOne({ email });
 
             if (!user) {
-                throw new AuthenticationError('User not found.');
+                throw new ApolloError('User not found.');
             }
 
             const correctPw = await user.isCorrectPassword(password);
 
             if (!correctPw) {
-                throw new AuthenticationError('Invalid password.');
+                throw new ApolloError('Invalid password.');
             }
 
             const token = jwt.sign({ _id: user._id, email: user.email }, secret, { expiresIn: '2h' });
@@ -47,7 +47,7 @@ const resolvers = {
 
         saveBook: async (_parent, { bookData }, { user }) => {
             if (!user) {
-                throw new AuthenticationError('You must be logged in to save books.');
+                throw new ApolloError('You must be logged in to save books.');
             }
 
             return User.findByIdAndUpdate(
@@ -59,7 +59,7 @@ const resolvers = {
 
         removeBook: async (_parent, { bookId }, { user }) => {
             if (!user) {
-                throw new AuthenticationError('You must be logged in to remove books.');
+                throw new ApolloError('You must be logged in to remove books.');
             }
 
             return User.findByIdAndUpdate(
@@ -70,4 +70,4 @@ const resolvers = {
     },
 };
 
-module.exports = resolvers;
+export {resolvers};

@@ -1,29 +1,17 @@
-const express = require('express');
-const path = require('path');
-const mongoose = require('mongoose');
-const { ApolloServer } = require('@apollo/server');
-const { expressMiddleware } = require('@apollo/server/express4');
-const jwt = require('jsonwebtoken');
-const helmet = require('helmet');
-const cors = require('cros');
-const rateLimit = require('express-rate-limit');
-require('dotenv').config();
-
-const { typeDefs, resolvers } = require('./schemas');
+import express from 'express';
+import path from 'path';
+import mongoose from 'mongoose';
+import { ApolloServer } from '@apollo/server';
+import { expressMiddleware} from '@apollo/server/express4';
+import { typeDefs} from './schemas/typeDefs.js';
+import { resolvers } from './schemas/resolvers.js';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(express.urlencoded({ extended: true}));
 app.use(express.json());
-app.use(helmet());
-app.use(cors());
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-});
-app.use(limiter);
 
 const secret = process.env.JWT_SECRET || 'mysecret';
 
@@ -34,7 +22,7 @@ const authenticate = (req) => {
       const user = jwt.verify(token.split('')[1], secret);
       return { user };
     } catch (err) {
-      console.error('Token Verification Error:', err.message);
+      console.log('Token Verification Error');
     }
   }
   return {};
